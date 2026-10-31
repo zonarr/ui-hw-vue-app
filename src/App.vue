@@ -1,5 +1,7 @@
 <script setup>
 import { ref } from 'vue'
+import CheckoutForm from './components/CheckoutForm.vue'
+import CheckoutList from './components/CheckoutList.vue'
 
 const message = ref('Choose an action to get started.')
 const currentView = ref('home')
@@ -27,15 +29,11 @@ function goHome() {
   </main>
 
   <main v-else-if="currentView === 'form'">
-    <h2>Check out an item</h2>
-    <p>The form goes here.</p>
-    <button type="button" @click="goHome">Back</button>
+    <CheckoutForm @cancel="goHome" />
   </main>
 
   <main v-else>
-    <h2>Current checkouts</h2>
-    <p>The list goes here.</p>
-    <button type="button" @click="goHome">Back</button>
+    <CheckoutList @cancel="goHome" />
   </main>
 </template>
 
