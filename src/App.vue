@@ -17,6 +17,14 @@ function browseCheckouts() {
 function goHome() {
   currentView.value = 'home'
 }
+
+const checkouts = ref([])
+
+function handleSubmitted(newCheckout) {
+  checkouts.value.push({ ...newCheckout, id: Date.now(), status: 'Borrowed' })
+  message.value = `${newCheckout.borrowerName} checked out a ${newCheckout.item}.`
+  goHome()
+}
 </script>
 
 <template>
@@ -29,7 +37,7 @@ function goHome() {
   </main>
 
   <main v-else-if="currentView === 'form'">
-    <CheckoutForm @cancel="goHome" />
+    <CheckoutForm @submitted="handleSubmitted" @cancel="goHome" />
   </main>
 
   <main v-else>
