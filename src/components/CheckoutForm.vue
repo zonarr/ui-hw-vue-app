@@ -1,7 +1,18 @@
 <script setup>
 import { reactive, ref } from 'vue'
 
+defineProps({
+  saving: {
+    type: Boolean,
+    default: false,
+  },
+})
+
 const emit = defineEmits(['submitted', 'cancel'])
+
+// Today's date as YYYY-MM-DD (local time), the format a date input uses.
+const now = new Date()
+const today = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10)
 
 const items = ['Laptop', 'Calculator', 'HDMI adapter', 'Camera', 'Tripod']
 
@@ -20,6 +31,11 @@ function submitForm() {
 
   if (hasEmptyField) {
     errorMessage.value = 'Please fill in every field.'
+    return
+  }
+
+  if (form.dueDate < today) {
+    errorMessage.value = 'The due date cannot be in the past.'
     return
   }
 
@@ -58,7 +74,7 @@ function cancel() {
 
         <label class="block text-sm font-medium">
           Due date
-          <input v-model="form.dueDate" type="date" class="field" />
+          <input v-model="form.dueDate" type="date" :min="today" class="field" />
         </label>
       </div>
 
@@ -67,9 +83,10 @@ function cancel() {
       <div class="flex flex-col gap-3 sm:flex-row">
         <button
           type="submit"
-          class="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
+          class="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          :disabled="saving"
         >
-          Check out
+          {{ saving ? 'Saving…' : 'Check out' }}
         </button>
         <button
           type="button"

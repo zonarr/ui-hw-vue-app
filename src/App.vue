@@ -44,6 +44,7 @@ function goHome() {
 }
 
 const checkouts = ref([])
+const saving = ref(false)
 
 // Turn a database row (snake_case) into the shape the components use (camelCase).
 function toCheckout(row) {
@@ -78,6 +79,9 @@ async function handleSubmitted(newCheckout) {
     return
   }
 
+  if (saving.value) return
+  saving.value = true
+
   const { data, error } = await supabase
     .from('checkouts')
     .insert({
@@ -90,13 +94,15 @@ async function handleSubmitted(newCheckout) {
     .select()
     .single()
 
+  saving.value = false
+
   if (error) {
     message.value = 'Could not save checkout: ' + error.message
     return
   }
 
   checkouts.value.unshift(toCheckout(data))
-  message.value = `${data.borrower_name} checked out a ${data.item}.`
+  message.value = `${data.borrower_name} checked out: ${data.item} (due ${data.due_date}).`
   goHome()
 }
 
@@ -144,7 +150,7 @@ async function handleReturn(id) {
       </main>
 
       <main v-else-if="currentView === 'form'">
-        <CheckoutForm @submitted="handleSubmitted" @cancel="goHome" />
+        <CheckoutForm :saving="saving" @submitted="handleSubmitted" @cancel="goHome" />
       </main>
 
       <main v-else>
