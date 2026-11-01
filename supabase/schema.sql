@@ -1,5 +1,4 @@
 -- ISE Equipment Checkout: Supabase schema
--- Run each part once in Supabase → SQL Editor.
 
 -- Part 1: checkouts table ------------------------------------------------
 begin;

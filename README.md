@@ -1,44 +1,53 @@
-# .
+# ISE Equipment Checkout
 
-This template should help get you started developing with Vue 3 in Vite.
+A small Vue 3 app for borrowing and returning ISE equipment (laptops, calculators, cameras and so on). Students check out an item with a form, see every current checkout in a list, and mark their own items as returned. Data is stored in Supabase, and a Make.com scenario logs an event for every new checkout.
 
-## Recommended IDE Setup
+## Stack
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+- **Vue 3** with `<script setup>`, built with Vite
+- **Tailwind CSS 4** for a responsive layout (one column on phones, two from 640px up)
+- **Supabase** for the database, anonymous sign-in and Row Level Security
+- **Make.com** for the automation
 
-## Recommended Browser Setup
+## How it works
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+```
+Vue form ──insert──▶ Supabase: checkouts
+                          │ Database Webhook (INSERT)
+                          ▼
+                     Make.com: Custom webhook
+                          ▼
+                     Make.com: Supabase "Create a Row" ──▶ checkout_events
+```
 
-## Customize configuration
+### Vue
+- `src/App.vue` owns the state, signs in anonymously on load, and reads, inserts and updates rows in Supabase.
+- `src/components/CheckoutForm.vue` is the checkout form (`v-model`, validation, emits `submitted`).
+- `src/components/CheckoutList.vue` shows all checkouts (`v-for`, status badge, "Mark returned" on your own borrowed items).
+- `src/lib/supabase.js` creates the one shared Supabase client.
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+### Database (`supabase/schema.sql`)
+| Table | Role |
+|---|---|
+| `checkouts` | Primary table. One row per checkout: borrower, student ID, item, due date, status (Borrowed or Returned), owner. |
+| `checkout_events` | Supporting table. One "created" event per checkout, written by Make. `checkout_id` references `checkouts.id`. |
 
-## Project Setup
+RLS policies let any signed-in user read checkouts, insert only their own, and change only their own from Borrowed to Returned. `checkout_events` is closed to the browser and written only by Make.
+
+### Make.com scenario
+1. **Trigger:** Webhooks › Custom webhook, called by a Supabase Database Webhook on INSERT into `public.checkouts`.
+2. **Action:** Supabase › Create a Row in `checkout_events`, mapping `record.id` to `checkout_id` and `event_type` to `created`.
+
+## Run it locally
 
 ```sh
 npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
+cp .env.example .env.local   # then fill in your Supabase URL and publishable key
 npm run dev
 ```
 
-### Compile and Minify for Production
+Run `supabase/schema.sql` once in the Supabase SQL Editor and enable anonymous sign-ins (Authentication › Sign In / Providers).
 
-```sh
-npm run build
-```
+## Screenshots
 
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
-```
+See the `screenshots/` folder: the form, the checkout list, both Supabase tables with sample rows, and the Make.com scenario.
