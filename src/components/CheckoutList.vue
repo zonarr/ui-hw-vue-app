@@ -51,7 +51,7 @@ function cancel() {
           </span>
 
           <button
-            v-if="checkout.status === 'Borrowed'"
+            v-if="checkout.status === 'Borrowed' && checkout.isMine"
             type="button"
             class="rounded-lg border border-slate-300 px-3 py-1 text-sm hover:bg-slate-100"
             @click="markReturned(checkout.id)"

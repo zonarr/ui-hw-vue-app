@@ -27,6 +27,7 @@ onMounted(async () => {
 
   userId.value = session.user.id
   message.value = 'Supabase sign-in ready.'
+  await loadCheckouts()
 })
 
 function startCheckout() {
@@ -35,6 +36,7 @@ function startCheckout() {
 
 function browseCheckouts() {
   currentView.value = 'list'
+  loadCheckouts()
 }
 
 function goHome() {
@@ -43,15 +45,76 @@ function goHome() {
 
 const checkouts = ref([])
 
-function handleSubmitted(newCheckout) {
-  checkouts.value.push({ ...newCheckout, id: Date.now(), status: 'Borrowed' })
-  message.value = `${newCheckout.borrowerName} checked out a ${newCheckout.item}.`
+// Turn a database row (snake_case) into the shape the components use (camelCase).
+function toCheckout(row) {
+  return {
+    id: row.id,
+    borrowerName: row.borrower_name,
+    studentId: row.student_id,
+    item: row.item,
+    dueDate: row.due_date,
+    status: row.status,
+    isMine: row.owner_id === userId.value,
+  }
+}
+
+async function loadCheckouts() {
+  const { data, error } = await supabase
+    .from('checkouts')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    message.value = 'Could not load checkouts: ' + error.message
+    return
+  }
+
+  checkouts.value = data.map(toCheckout)
+}
+
+async function handleSubmitted(newCheckout) {
+  if (!userId.value) {
+    message.value = 'Still signing in. Please try again in a moment.'
+    return
+  }
+
+  const { data, error } = await supabase
+    .from('checkouts')
+    .insert({
+      owner_id: userId.value,
+      borrower_name: newCheckout.borrowerName.trim(),
+      student_id: newCheckout.studentId.trim(),
+      item: newCheckout.item,
+      due_date: newCheckout.dueDate,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    message.value = 'Could not save checkout: ' + error.message
+    return
+  }
+
+  checkouts.value.unshift(toCheckout(data))
+  message.value = `${data.borrower_name} checked out a ${data.item}.`
   goHome()
 }
 
-function handleReturn(id) {
+async function handleReturn(id) {
+  const { data, error } = await supabase
+    .from('checkouts')
+    .update({ status: 'Returned' })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) {
+    message.value = 'Could not mark as returned: ' + error.message
+    return
+  }
+
   const checkout = checkouts.value.find((c) => c.id === id)
-  checkout.status = 'Returned'
+  checkout.status = data.status
 }
 </script>
 
