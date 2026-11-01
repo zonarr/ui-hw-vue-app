@@ -1,6 +1,6 @@
 # ISE Equipment Checkout
 
-A small Vue 3 app for borrowing and returning ISE equipment (laptops, calculators, cameras and so on). Students check out an item with a form, see every current checkout in a list, and mark their own items as returned. Data is stored in Supabase, and a Make.com scenario logs an event for every new checkout.
+A small Vue 3 app for borrowing and returning ISE equipment (laptops, calculators, cameras and so on). Students check out an item with a form, see every current checkout in a list, and mark their own items as returned. Data is stored in Supabase, and a Make.com scenario logs a history event every time an item is checked out or returned.
 
 ## Stack
 
@@ -13,9 +13,9 @@ A small Vue 3 app for borrowing and returning ISE equipment (laptops, calculator
 
 ```
 Vue form ──insert──▶ Supabase: checkouts
-                          │ Database Webhook (INSERT)
+                          │ Database Webhook (INSERT, UPDATE)
                           ▼
-                     Make.com: Custom webhook
+                     Make.com: Custom webhook (INSERT or UPDATE)
                           ▼
                      Make.com: Supabase "Create a Row" ──▶ checkout_events
 ```
@@ -30,13 +30,15 @@ Vue form ──insert──▶ Supabase: checkouts
 | Table | Role |
 |---|---|
 | `checkouts` | Primary table. One row per checkout: borrower, student ID, item, due date, status (Borrowed or Returned), owner. |
-| `checkout_events` | Supporting table. One "created" event per checkout, written by Make. `checkout_id` references `checkouts.id`. |
+| `checkout_events` | Supporting table. A history log written by Make: a "created" event when an item is borrowed and a "returned" event when it comes back. `checkout_id` references `checkouts.id`. |
 
 RLS policies let any signed-in user read checkouts, insert only their own, and change only their own from Borrowed to Returned. `checkout_events` is closed to the browser and written only by Make.
 
 ### Make.com scenario
-1. **Trigger:** Webhooks › Custom webhook, called by a Supabase Database Webhook on INSERT into `public.checkouts`.
-2. **Action:** Supabase › Create a Row in `checkout_events`, mapping `record.id` to `checkout_id` and `event_type` to `created`.
+1. **Trigger:** Webhooks › Custom webhook, called by a Supabase Database Webhook on INSERT and UPDATE of `public.checkouts`.
+2. **Action:** Supabase › Create a Row in `checkout_events`, mapping `record.id` to `checkout_id` and setting `event_type` with `if(type = INSERT; created; returned)`.
+
+This keeps a timeline per item (when it was borrowed and when it was returned), which `checkouts` alone cannot show because its `status` is overwritten.
 
 ## Run it locally
 
