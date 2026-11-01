@@ -33,37 +33,60 @@ function cancel() {
 </script>
 
 <template>
-  <section>
-    <h2>Check out an item</h2>
+  <section class="rounded-xl bg-white p-5 shadow-sm sm:p-6">
+    <h2 class="mb-4 text-xl font-semibold">Check out an item</h2>
 
-    <form @submit.prevent="submitForm">
-      <label>
-        Your name
-        <input v-model="form.borrowerName" type="text" />
-      </label>
+    <form class="space-y-4" @submit.prevent="submitForm">
+      <div class="grid gap-4 sm:grid-cols-2">
+        <label class="block text-sm font-medium">
+          Your name
+          <input v-model="form.borrowerName" type="text" class="field" />
+        </label>
 
-      <label>
-        Student ID
-        <input v-model="form.studentId" type="text" />
-      </label>
+        <label class="block text-sm font-medium">
+          Student ID
+          <input v-model="form.studentId" type="text" class="field" />
+        </label>
 
-      <label>
-        Item
-        <select v-model="form.item">
-          <option value="">Choose an item</option>
-          <option v-for="item in items" :key="item" :value="item">{{ item }}</option>
-        </select>
-      </label>
+        <label class="block text-sm font-medium">
+          Item
+          <select v-model="form.item" class="field">
+            <option value="">Choose an item</option>
+            <option v-for="item in items" :key="item" :value="item">{{ item }}</option>
+          </select>
+        </label>
 
-      <label>
-        Due date
-        <input v-model="form.dueDate" type="date" />
-      </label>
+        <label class="block text-sm font-medium">
+          Due date
+          <input v-model="form.dueDate" type="date" class="field" />
+        </label>
+      </div>
 
-      <p v-if="errorMessage" role="alert">{{ errorMessage }}</p>
+      <p v-if="errorMessage" role="alert" class="text-sm text-red-600">{{ errorMessage }}</p>
 
-      <button type="submit">Check out</button>
-      <button type="button" @click="cancel">Back</button>
+      <div class="flex flex-col gap-3 sm:flex-row">
+        <button
+          type="submit"
+          class="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
+        >
+          Check out
+        </button>
+        <button
+          type="button"
+          class="rounded-lg border border-slate-300 px-4 py-2 font-medium hover:bg-slate-100"
+          @click="cancel"
+        >
+          Back
+        </button>
+      </div>
     </form>
   </section>
 </template>
+
+<style scoped>
+@reference 'tailwindcss';
+
+.field {
+  @apply mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 font-normal focus:border-blue-500 focus:outline-none;
+}
+</style>
