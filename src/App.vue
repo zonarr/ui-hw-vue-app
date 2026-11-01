@@ -25,6 +25,11 @@ function handleSubmitted(newCheckout) {
   message.value = `${newCheckout.borrowerName} checked out a ${newCheckout.item}.`
   goHome()
 }
+
+function handleReturn(id) {
+  const checkout = checkouts.value.find((c) => c.id === id)
+  checkout.status = 'Returned'
+}
 </script>
 
 <template>
@@ -41,7 +46,7 @@ function handleSubmitted(newCheckout) {
   </main>
 
   <main v-else>
-    <CheckoutList @cancel="goHome" />
+    <CheckoutList :checkouts="checkouts" @return="handleReturn" @cancel="goHome" />
   </main>
 </template>
 
