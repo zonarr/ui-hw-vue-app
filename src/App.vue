@@ -1,10 +1,33 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { supabase } from './lib/supabase'
 import CheckoutForm from './components/CheckoutForm.vue'
 import CheckoutList from './components/CheckoutList.vue'
 
 const message = ref('Choose an action to get started.')
 const currentView = ref('home')
+const userId = ref(null)
+
+onMounted(async () => {
+  const { data, error } = await supabase.auth.getSession()
+  if (error) {
+    message.value = 'Sign-in error: ' + error.message
+    return
+  }
+
+  let session = data.session
+  if (!session) {
+    const result = await supabase.auth.signInAnonymously()
+    if (result.error) {
+      message.value = 'Sign-in error: ' + result.error.message
+      return
+    }
+    session = result.data.session
+  }
+
+  userId.value = session.user.id
+  message.value = 'Supabase sign-in ready.'
+})
 
 function startCheckout() {
   currentView.value = 'form'
